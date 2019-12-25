@@ -32,18 +32,22 @@ try:
     import aiohttp
     import datetime
     import json
+    import webbrowser
+    import ctypes
     import logging
     import sys
     import crayons
-    import functools
+    import os
 except ModuleNotFoundError as e:
     print(e)
-    print('Failed to import 1 or more modules, running "INSTALL PACKAGES.bat" might fix the issue, if not please create an issue.')
-    exit()
+    print('Failed to import 1 or more modules!')
 
-# All functions (not including events).
-def time():
-    return datetime.datetime.now().strftime('%H:%M:%S')
+__location__ = os.path.realpath(
+    os.path.join(os.getcwd(), os.path.dirname(__file__)))
+
+def getTime():
+    time = datetime.datetime.now().strftime('%H:%M:%S')
+    return time
 
 async def setVTID(VTID):
     url = f'http://benbotfn.tk:8080/api/assetProperties?file=FortniteGame/Content/Athena/Items/CosmeticVariantTokens/{VTID}.uasset'
@@ -65,12 +69,12 @@ async def setVTID(VTID):
             else:
                 return SkinCID, VariantType, VariantInt
 
-print(crayons.cyan(f'[Push3rBot] [{time()}] Push3rBot made by xMistt. Massive credit to Terbau for creating the library.'))
+print(f'[Push3rBot] [{getTime()}] Bot created by LON3PUSH3R#6969')
 
-with open('config.json') as f:
+with open(__location__ + '\config.json') as f:
     data = json.load(f)
     
-if data['debug'] is True:
+if data['debug'] == True:
     logger = logging.getLogger('fortnitepy.http')
     logger.setLevel(level=logging.DEBUG)
     handler = logging.StreamHandler(sys.stdout)
@@ -83,56 +87,44 @@ if data['debug'] is True:
     handler.setFormatter(logging.Formatter('\u001b[35m %(asctime)s:%(levelname)s:%(name)s: %(message)s \u001b[0m'))
     logger.addHandler(handler)
 else:
-    print(f"[Push3rBot] [{time()}] Debug logging is off. (This isn't an error!)")
+    print(f"[Push3rBot] [{getTime()}] Debug logging is off.")
 
 client = fortnitepy.Client(
     email=data['email'],
     password=data['password'],
     status=data['status'],
-    platform=fortnitepy.Platform(data['platform']),
-    default_party_member_config=[
-        functools.partial(fortnitepy.ClientPartyMember.set_outfit, data['cid']),
-        functools.partial(fortnitepy.ClientPartyMember.set_backpack, data['bid']),
-        functools.partial(fortnitepy.ClientPartyMember.set_banner, icon=data['banner'], color=data['banner_colour'], season_level=data['level']),
-        functools.partial(fortnitepy.ClientPartyMember.set_emote, data['eid']),
-        functools.partial(fortnitepy.ClientPartyMember.set_battlepass_info, has_purchased=True, level=data['bp_tier'], self_boost_xp='0', friend_boost_xp='0')
-    ]
+    platform=fortnitepy.Platform(data['platform'])
 )
 
 @client.event
 async def event_ready():
-    print(crayons.green(f'[Push3rBot] [{time()}] Client ready as {client.user.display_name}.'))
+    print(crayons.green(f'[Push3rBot] [{getTime()}] Bot ready as {client.user.display_name}.'))
 
 @client.event
 async def event_party_invite(invite):
    await invite.accept()
-   print(f'[Push3rBot] [{time()}] Accepted party invite from {invite.sender.display_name}.')
+   print(f'[Push3rBot] [{getTime()}] ACCEPTED party invite from {invite.sender}.')
 
 @client.event
 async def event_friend_request(request):
-    print(f"[Push3rBot] [{time()}] Recieved friend request from: {request.display_name}.")
+    print(f"[Push3rBot] [{getTime()}] RECIEVED friend request from: {request.display_name}.")
 
     if data['friendaccept'] is True:
         await request.accept()
-        print(f"[Push3rBot] [{time()}] Accepted friend request from: {request.display_name}.")
+        print(f"[Push3rBot] [{getTime()}] ACCEPTED friend request from: {request.display_name}.")
     elif data['friendaccept'] is False:
         await request.decline()
-        print(f"[Push3rBot] [{time()}] Declined friend request from: {request.display_name}.")
-
-@client.event
-async def event_party_member_join(member):
-    await client.user.party.me.set_emote(asset=data['eid'])
-
+        print(f"[Push3rBot] [{getTime()}] REJECTED friend request from: {request.display_name}.")
+    
     if client.user.display_name != member.display_name:
-        print(f"[Push3rBot] [{time()}] {member.display_name} has joined the lobby.")
+        print(f"[Push3rBot] [{getTime()}] {member.display_name} has joined the lobby.")
 
 @client.event
 async def event_friend_message(message):
     args = message.content.split()
     split = args[1:]
     content = " ".join(split)
-
-    print(f'[Push3rBot] [{time()}] {message.author.display_name}: {message.content}')
+    print(f'[Push3rBot] [{getTime()}] {message.author.display_name}: {message.content}')
 
     if "!skin" in args[0].lower():
         cosmetic = await BenBotAsync.get_cosmetic(content, parameter='displayName', sorter='type', filter='Outfit')
@@ -141,7 +133,7 @@ async def event_friend_message(message):
         else:
             await client.user.party.me.set_outfit(asset=cosmetic.id)
             await message.reply(f'Skin set to {cosmetic.id}')
-            print(f"[Push3rBot] [{time()}] Set Skin to: {cosmetic.id}")
+            print(f"[Push3rBot] [{getTime()}] Set Skin to: {cosmetic.id}")
         
     elif "!backpack" in args[0].lower():
         cosmetic = await BenBotAsync.get_cosmetic(content, parameter='displayName', sorter='type', filter='Back Bling')
@@ -150,7 +142,7 @@ async def event_friend_message(message):
         else:
             await client.user.party.me.set_backpack(asset=cosmetic.id)
             await message.reply(f'Backpack set to {cosmetic.id}')
-            print(f"[Push3rBot] [{time()}] Set Backpack to: {cosmetic.id}")
+            print(f"[Push3rBot] [{getTime()}] Set Backpack to: {cosmetic.id}")
 
     elif "!emote" in args[0].lower():
         await client.user.party.me.clear_emote()
@@ -160,7 +152,7 @@ async def event_friend_message(message):
         else:
             await client.user.party.me.set_emote(asset=cosmetic.id)
             await message.reply(f'Emote set to {cosmetic.id}')
-            print(f"[Push3rBot] [{time()}] Set Emote to: {cosmetic.id}")
+            print(f"[Push3rBot] [{getTime()}] Set Emote to: {cosmetic.id}")
 
     elif "!pickaxe" in args[0].lower():
         cosmetic = await BenBotAsync.get_cosmetic(content, parameter='displayName', sorter='type', filter='Harvesting Tool')
@@ -169,22 +161,22 @@ async def event_friend_message(message):
         else:
             await client.user.party.me.set_pickaxe(asset=cosmetic.id)
             await message.reply(f'Pickaxe set to {cosmetic.id}')
-            print(f"[Push3rBot] [{time()}] Set Pickaxe to: {cosmetic.id}")
+            print(f"[Push3rBot] [{getTime()}] Set Pickaxe to: {cosmetic.id}")
 
     elif "!pet" in args[0].lower():
         cosmetic = await BenBotAsync.get_cosmetic(content, parameter='displayName', sorter='backendType', filter='AthenaPet')
         await client.user.party.me.set_backpack(asset=f"/Game/Athena/Items/Cosmetics/PetCarriers/{cosmetic.id}.{cosmetic.id}")
         await message.reply(f'Pet set to {cosmetic.id}')
-        print(f"[Push3rBot] [{time()}] Set PetCarrier to: {cosmetic.id}")
+        print(f"[Push3rBot] [{getTime()}] Set PetCarrier to: {cosmetic.id}")
 
     elif "!emoji" in args[0].lower():
         cosmetic = await BenBotAsync.get_cosmetic(content, parameter='displayName', sorter='backendType', filter='AthenaDance')
         await client.user.party.me.clear_emote()
         await client.user.party.me.set_emote(asset=f"/Game/Athena/Items/Cosmetics/Dances/Emoji/{cosmetic.id}.{cosmetic.id}")
         await message.reply(f'Emoji set to {cosmetic.id}')
-        print(f"[Push3rBot] [{time()}] Set Emoji to: {cosmetic.id}")
+        print(f"[Push3rBot] [{getTime()}] Set Emoji to: {cosmetic.id}")
 
-    elif "!purpleskull" in args[0].lower():
+    elif "!ogskull" in args[0].lower():
         variants = client.user.party.me.create_variants(
            clothing_color=1
         )
@@ -196,7 +188,7 @@ async def event_friend_message(message):
 
         await message.reply('Skin set to Purple Skull Trooper!')
 
-    elif "!pinkghoul" in args[0].lower():
+    elif "!ogghoul" in args[0].lower():
         variants = client.user.party.me.create_variants(
            material=3
         )
@@ -208,7 +200,7 @@ async def event_friend_message(message):
 
         await message.reply('Skin set to Pink Ghoul Trooper!')
 
-    elif "!purpleportal" in args[0].lower():
+    elif "!ogportal" in args[0].lower():
         variants = client.user.party.me.create_variants(
             item='AthenaBackpack',
             particle_config='Particle',
@@ -225,15 +217,15 @@ async def event_friend_message(message):
     elif "!banner" in args[0].lower():
         if len(args) == 1:
             await message.reply('You need to specifiy which banner, color & level you want to set the banner as.')
-        elif len(args) == 2:
+        if len(args) == 2:
             await client.user.party.me.set_banner(icon=args[1], color=data['banner_colour'], season_level=data['level'])
-        elif len(args) == 3:
+        if len(args) == 3:
             await client.user.party.me.set_banner(icon=args[1], color=args[2], season_level=data['level'])
-        elif len(args) == 4:
+        if len(args) == 4:
             await client.user.party.me.set_banner(icon=args[1], color=args[2], season_level=args[3])
 
         await message.reply(f'Banner set to; {args[1]} {args[2]} {args[3]}')
-        print(f"[Push3rBot] [{time()}] Banner set to; {args[1]} {args[2]} {args[3]}")
+        print(f"[Push3rBot] [{getTime()}] Banner set to; {args[1]} {args[2]} {args[3]}")
 
     elif "cid_" in args[0].lower():
         await client.user.party.me.set_outfit(
@@ -241,7 +233,7 @@ async def event_friend_message(message):
         )
 
         await message.reply(f'Skin set to {args[0]}')
-        await print(f'[Push3rBot] [{time()}] Skin set to {args[0]}')
+        await print(f'[Push3rBot] [{getTime()}] Skin set to {args[0]}')
 
     elif "vtid_" in args[0].lower():
         VTID = await setVTID(args[0])
@@ -254,19 +246,10 @@ async def event_friend_message(message):
         await message.reply(f'Variants set to {args[0]}.\n(Warning: This feature is not supported, please use !variants)')
 
     elif "!variants" in args[0]:
-        try:
-            args3 = int(args[3])
-        except ValueError:
-            args3 = args[3]
+        args3 = int(args[3])
 
-        if 'cid' in args[1].lower() and 'jersey_color' not in args[2]:
-            variants = client.user.party.me.create_variants(**{args[2]: args[3]})
-            await client.user.party.me.set_outfit(
-                asset=args[1],
-                variants=variants
-            )
-        elif 'cid' in args[1].lower() and 'jersey_color' in args[2]:
-            variants = client.user.party.me.create_variants(pattern=0, numeric=69, **{args[2]: args[3]})
+        if 'cid' in args[1].lower():
+            variants = client.user.party.me.create_variants(**{args[2]: args3})
             await client.user.party.me.set_outfit(
                 asset=args[1],
                 variants=variants
@@ -285,9 +268,9 @@ async def event_friend_message(message):
             )
 
         await message.reply(f'Set variants of {args[1]} to {args[2]} {args[3]}.')
-        print(f'[Push3rBot] [{time()}] Set variants of {args[1]} to {args[2]} {args[3]}.')
+        print(f'[Push3rBot] [{getTime()}] Set variants of {args[1]} to {args[2]} {args[3]}.')
 
-    elif "!checkeredrenegade" in args[0].lower():
+    elif "!ogrenegade" in args[0].lower():
         variants = client.user.party.me.create_variants(
            material=2
         )
@@ -330,7 +313,8 @@ async def event_friend_message(message):
         await message.reply(f'Backbling set to {args[0]}!')
 
     elif "!help" in args[0].lower():
-        await message.reply('For a list of commands, goto; https://github.com/xMistt/fortnitepy-bot')
+        await message.reply('Opening Command List... Please wait...')
+        os.startfile(__location__ + "\index.html")
 
     elif "PICKAXE_ID_" in args[0].lower():
         await client.user.party.me.set_pickaxe(
@@ -397,14 +381,14 @@ async def event_friend_message(message):
         await client.set_status(content)
 
         await message.reply(f'Status set to {content}')
-        print(f'[Push3rBot] [{time()}] Status set to {content}.')
+        print(f'[Push3rBot] [{getTime()}] Status set to {content}.')
 
     elif "!leave" in args[0].lower():
         await client.user.party.me.set_emote('EID_Wave')
         await asyncio.sleep(2)
         await client.user.party.me.leave()
         await message.reply('Bye!')
-        print(f'[Push3rBot] [{time()}] Left the party as I was requested.')
+        print(f'[Push3rBot] [{getTime()}] Left the party as I was requested.')
 
     elif "!kick" in args[0].lower():
         user = await client.fetch_profile(content)
@@ -415,10 +399,10 @@ async def event_friend_message(message):
             try:
                 await member.kick()
                 await message.reply(f"Kicked user: {member.display_name}.")
-                print(f"[Push3rBot] [{time()}] Kicked user: {member.display_name}")
-            except fortnitepy.Forbidden:
+                print(f"[Push3rBot] [{getTime()}] Kicked user: {member.display_name}")
+            except fortnitepy.PartyPermissionError:
                 await message.reply(f"Couldn't kick {member.display_name}, as I'm not party leader.")
-                print(crayons.red(f"[Push3rBot] [{time()}] [ERROR] Failed to kick member as I don't have the required permissions."))
+                print(crayons.red(f"[Push3rBot] [{getTime()}] [ERROR] Failed to kick member as I don't have the required permissions."))
 
     elif "!promote" in args[0].lower():
         if len(args) != 1:
@@ -434,17 +418,17 @@ async def event_friend_message(message):
             try:
                 await member.promote()
                 await message.reply(f"Promoted user: {member.display_name}.")
-                print(f"[Push3rBot] [{time()}] Promoted user: {member.display_name}")
-            except fortnitepy.Forbidden:
+                print(f"[Push3rBot] [{getTime()}] Promoted user: {member.display_name}")
+            except fortnitepy.PartyPermissionError:
                 await message.reply(f"Couldn't promote {member.display_name}, as I'm not party leader.")
-                print(crayons.red(f"[Push3rBot] [{time()}] [ERROR] Failed to promote member as I don't have the required permissions."))
+                print(crayons.red(f"[Push3rBot] [{getTime()}] [ERROR] Failed to promote member as I don't have the required permissions."))
 
     elif "Playlist_" in args[0]:
         try:
             await client.user.party.set_playlist(playlist=args[0])
-        except fortnitepy.Forbidden:
+        except fortnitepy.PartyPermissionError:
                 await message.reply(f"Couldn't set gamemode to {args[1]}, as I'm not party leader.")
-                print(crayons.red(f"[Push3rBot] [{time()}] [ERROR] Failed to set gamemode as I don't have the required permissions."))
+                print(crayons.red(f"[Push3rBot] [{getTime()}] [ERROR] Failed to set gamemode as I don't have the required permissions."))
 
     elif "!platform" in args[0]:
         await message.reply(f'Setting platform to {args[0]}')
@@ -467,4 +451,6 @@ async def event_friend_message(message):
 try:
     client.run()
 except fortnitepy.AuthException:
-    print(crayons.red(f"[Push3rBot] [{time()}] [ERROR] Invalid account credentials."))
+    print(crayons.red(f"[Push3rBot] [{getTime()}] [ERROR] Invalid account credentials."))
+    
+
