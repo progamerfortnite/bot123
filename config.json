@@ -4,12 +4,12 @@
     "cid": "CID_051_Athena_Commando_M_HolidayElf",
     "bid": "BID_289_Banner",
     "eid": "EID_worm",
-    "banner": "influencerbanner9",
-    "banner_colour": "defaultcolor15",
+    "banner": "BRSeason01",
+    "banner_colour": "defaultcolor2",
     "level": 265,
     "bp_tier": -101,
-    "status": "Im Launcher",
+    "status": "in Lobby",
     "platform": "PSN",
     "debug": false,
-    "friendaccept": false
+    "friendaccept": true
 }
